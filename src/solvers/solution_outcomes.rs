@@ -1,5 +1,6 @@
-pub enum TaskResult {
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum TaskResult<'a> {
     SAT(Vec<bool>),
-    UNSAT(String),
+    UNSAT(&'a str),
     UNKNOWN,
 }
