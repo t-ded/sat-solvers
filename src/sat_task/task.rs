@@ -30,6 +30,10 @@ impl Clause {
         clause
     }
 
+    pub fn mask_literal(&mut self, literal: isize) {
+        self.literals.insert(literal, false);
+    }
+
     pub fn is_satisfied(&self, assignment: &Vec<Option<bool>>) -> bool {
         if self.n_literals == 0 { return false }
         for (literal, literal_mask) in self.literals.iter() {
@@ -56,11 +60,27 @@ pub struct Task {
 
 impl Task {
     pub fn empty(n_variables: usize, n_clauses: usize) -> Task {
-        Task { n_variables, n_clauses, clauses: Vec::with_capacity(n_clauses), mask: vec![true; n_clauses] }
+        Task { n_variables, n_clauses, clauses: Vec::with_capacity(n_clauses * 2), mask: vec![true; n_clauses] }
+    }
+
+    pub fn mask_nth_clause(&mut self, n: usize) {
+        self.mask[n] = false;
+        self.n_clauses -= 1;
+    }
+
+    pub fn is_masked(&self, n: usize) -> bool {
+        !self.mask[n]
+    }
+
+    pub fn add_clause(&mut self, clause: Clause) {
+        self.n_clauses += 1;
+        self.clauses.push(clause);
+        self.mask.push(true);
     }
 
     pub fn remove_nth_clause(&mut self, n: usize) {
-        self.mask[n] = false;
         self.n_clauses -= 1;
+        self.clauses.remove(n);
+        self.mask.remove(n);
     }
 }

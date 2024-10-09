@@ -19,7 +19,7 @@ impl Parser {
         Ok(task)
     }
 
-    fn parse_str(&self, input: &str) -> Task {
+    pub(crate) fn parse_str(&self, input: &str) -> Task {
         let mut input_lines = input.lines();
         let mut header = input_lines.next().unwrap().split_whitespace();
         let n_variables = header.nth(2).unwrap().parse().unwrap();
