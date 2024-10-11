@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum TaskResult<'a> {
-    SAT(Vec<bool>),
+    SAT(HashMap<usize, bool>),
     UNSAT(&'a str),
     UNKNOWN,
 }

@@ -1,9 +1,9 @@
+use crate::sat_task::task::Clause;
+use crate::sat_task::task::Task;
 use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::Path;
-use crate::sat_task::task::Task;
-use crate::sat_task::task::Clause;
 
 
 pub struct Parser {}
@@ -43,9 +43,9 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::collections::HashSet;
     use std::iter::zip;
-    use super::*;
 
     #[test]
     fn test_parse_basic_str() {
@@ -62,7 +62,7 @@ mod tests {
             HashSet::from_iter([-3, -4])
         ];
         for (clause, expected_literals) in zip(&task.clauses, expected.iter()) {
-            assert_eq!(&clause.literals.keys().cloned().collect::<HashSet<isize>>(), expected_literals)
+            assert_eq!(&clause.literals.clone().into_iter().collect::<HashSet<isize>>(), expected_literals)
         }
     }
 }
