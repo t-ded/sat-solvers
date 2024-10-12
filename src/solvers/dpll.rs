@@ -1,26 +1,38 @@
-use crate::sat_task::task::Task;
+use crate::sat_task::task::{Clause, Task};
 use crate::solvers::solution_outcomes::TaskResult;
 use crate::solvers::solution_outcomes::TaskResult::UNSAT;
-use rand::Rng;
+use std::ops::Neg;
 
-pub struct DPLLSolver {}
+pub struct DPLLSolver {
+    cache_removed_clauses: Vec<Clause>,
+    cache_clauses_with_removed_literal: Vec<usize>,
+}
 
 impl DPLLSolver {
     pub fn new() -> Self {
-        DPLLSolver { }
+        DPLLSolver { cache_removed_clauses: Vec::new(), cache_clauses_with_removed_literal: Vec::new() }
     }
 
-    pub fn solve(&self, input: &mut Task, chosen_lit: usize) -> TaskResult {
+    pub fn solve(&mut self, input: &mut Task, chosen_lit: usize) -> TaskResult {
         if input.is_solved() {
             self.return_sat_assignment(&input)
         } else if input.is_solvable() && chosen_lit <= input.n_variables {
             input.assign_literal(chosen_lit, Some(true));
-            let result = self.solve(input, chosen_lit + 1);
-            if let TaskResult::SAT(_) = result { return result }
+            input.add_clause(Clause::from_literal_iter(std::iter::once(chosen_lit as isize)));
+            self.unit_propagation(input);
+            if let TaskResult::SAT(assignment) = self.solve(input, chosen_lit + 1) {
+                return TaskResult::SAT(assignment)
+            }
+            self.revert_unit_propagation(input, chosen_lit as isize);
 
+            let neg_lit = -(chosen_lit as isize);
             input.assign_literal(chosen_lit, Some(false));
-            let result = self.solve(input, chosen_lit + 1);
-            if let TaskResult::SAT(_) = result { return result }
+            input.add_clause(Clause::from_literal_iter(std::iter::once(neg_lit)));
+            self.unit_propagation(input);
+            if let TaskResult::SAT(assignment) = self.solve(input, chosen_lit + 1) {
+                return TaskResult::SAT(assignment)
+            }
+            self.revert_unit_propagation(input, neg_lit);
 
             input.assign_literal(chosen_lit, None);
             UNSAT("TODO")
@@ -28,6 +40,44 @@ impl DPLLSolver {
             println!("Not solvable: {:?}", input.assignment);
             UNSAT("TODO")
         }
+    }
+
+    pub fn unit_propagation(&mut self, input: &mut Task) {
+        loop {
+            let unit_literal = self.find_unit_literal(input);
+            if unit_literal == 0 { break }
+            let mut i = 0;
+            while i < input.n_clauses {
+                if input.clauses[i].literals.contains(&unit_literal) {
+                    self.cache_removed_clauses.push(input.remove_nth_clause(i));
+                } else {
+                    if input.clauses[i].literals.contains(&unit_literal.neg()) {
+                        input.clauses[i].remove_literal(unit_literal.neg());
+                        self.cache_clauses_with_removed_literal.push(i);
+                    }
+                    i += 1;
+                }
+            }
+        }
+    }
+
+    fn find_unit_literal(&self, input: &'_ Task) -> isize {
+        for clause in input.clauses.iter() {
+            if clause.n_literals == 1 {
+                return *clause.literals.iter().next().unwrap()
+            }
+        }
+        0
+    }
+
+    fn revert_unit_propagation(&mut self, input: &mut Task, chosen_lit: isize) {
+        while let Some(clause_idx) = self.cache_clauses_with_removed_literal.pop() {
+            input.clauses[clause_idx].add_literal(chosen_lit);
+        }
+        while let Some(clause) = self.cache_removed_clauses.pop() {
+            input.add_clause(clause);
+        }
+    }
 
         // self.unit_propagation(input);
         // for clause in &input.clauses {
@@ -61,7 +111,6 @@ impl DPLLSolver {
         //     return if input.is_solved() { self.return_sat_assignment(input) } else { TaskResult::UNSAT("TODO") }
         // }
         //
-    }
 
     fn return_sat_assignment(&self, input: &Task) -> TaskResult {
         TaskResult::SAT(
@@ -73,34 +122,6 @@ impl DPLLSolver {
         )
     }
     //
-    // pub fn unit_propagation(&self, mut input: &mut Task) {
-    //     loop {
-    //         let unit_literal = self.find_unit_literal(input);
-    //         if unit_literal == 0 { break }
-    //         for i in 0..input.n_clauses {
-    //             if let Some(&true) = input.clauses[i].literals.get(&unit_literal) {
-    //                 input.mask_nth_clause(i);
-    //             }
-    //             if let Some(&true) = input.clauses[i].literals.get(&(-unit_literal)) {
-    //                 input.clauses[i].mask_literal(-unit_literal);
-    //             }
-    //         }
-    //     }
-    // }
-    //
-    // fn find_unit_literal(&self, input: &Task) -> isize {
-    //     for (i, clause) in input.clauses.iter().enumerate() {
-    //         if input.is_masked(i) { continue };
-    //         if clause.n_literals == 1 {
-    //             for (literal, mask) in clause.literals.iter() {
-    //                 if *mask {
-    //                     return *literal
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     0
-    // }
     //
     // pub fn propagate_pure_literals(&self, mut input: &mut Task) {
     //     loop {
