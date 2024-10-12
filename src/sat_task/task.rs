@@ -2,19 +2,19 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
 pub struct Clause {
-    pub literals: Vec<isize>,
+    pub literals: HashSet<isize>,
     pub n_literals: usize,
 }
 
 impl Clause {
     pub fn empty() -> Clause {
-        Clause { literals: Vec::new(), n_literals: 0 }
+        Clause { literals: HashSet::new(), n_literals: 0 }
     }
 
     pub fn from_set(literal_set: HashSet<isize>) -> Clause {
         Clause {
             n_literals: literal_set.len(),
-            literals: literal_set.into_iter().collect(),
+            literals: literal_set,
         }
     }
 
@@ -51,6 +51,16 @@ impl Clause {
         }
         any_satisfied_found
     }
+
+    pub fn remove_literal(&mut self, literal: isize) {
+        self.n_literals -= 1;
+        self.literals.remove(&literal);
+    }
+
+    pub fn add_literal(&mut self, literal: isize) {
+        self.n_literals += 1;
+        self.literals.insert(literal);
+    }
 }
 
 #[derive(Debug)]
@@ -77,6 +87,9 @@ impl Task {
         for clause in self.clauses.iter() {
             if !clause.is_satisfied(&self.assignment) { return false }
         }
+        for truth_value in self.assignment.values() {
+            if truth_value.is_none() { return false }
+        }
         true
     }
 
@@ -93,11 +106,11 @@ impl Task {
 
     pub fn add_clause(&mut self, clause: Clause) {
         self.n_clauses += 1;
-        self.clauses.push(clause);
+        self.clauses.insert(0, clause);
     }
 
-    pub fn remove_nth_clause(&mut self, n: usize) {
+    pub fn remove_nth_clause(&mut self, n: usize) -> Clause {
         self.n_clauses -= 1;
-        self.clauses.remove(n);
+        self.clauses.remove(n)
     }
 }
