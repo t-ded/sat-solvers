@@ -83,6 +83,15 @@ impl Task {
         self.clauses[n].is_satisfied(&self.assignment)
     }
 
+    pub fn contains_empty_clause(&self) -> bool {
+        for clause in self.clauses.iter() {
+            if clause.n_literals == 0 {
+                return true
+            }
+        }
+        false
+    }
+
     pub fn is_solved(&self) -> bool {
         for clause in self.clauses.iter() {
             if !clause.is_satisfied(&self.assignment) { return false }
@@ -106,7 +115,7 @@ impl Task {
 
     pub fn add_clause(&mut self, clause: Clause) {
         self.n_clauses += 1;
-        self.clauses.insert(0, clause);
+        self.clauses.push(clause);
     }
 
     pub fn remove_nth_clause(&mut self, n: usize) -> Clause {
