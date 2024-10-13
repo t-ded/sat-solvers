@@ -10,7 +10,7 @@ pub struct Parser {}
 
 impl Parser {
 
-    fn parse_file<P: AsRef<Path>>(&self, file_path: P) -> io::Result<Task> {
+    pub fn parse_file<P: AsRef<Path>>(&self, file_path: P) -> io::Result<Task> {
         let mut file = File::open(file_path)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
@@ -19,14 +19,19 @@ impl Parser {
         Ok(task)
     }
 
-    pub(crate) fn parse_str(&self, input: &str) -> Task {
-        let mut input_lines = input.lines();
+    pub fn parse_str(&self, input: &str) -> Task {
+        let mut input_lines = input.lines().peekable();
+        while let Some(nxt) = input_lines.peek() {
+            if (*nxt).starts_with("p") { break }
+            input_lines.next();
+        }
         let mut header = input_lines.next().unwrap().split_whitespace();
         let n_variables = header.nth(2).unwrap().parse().unwrap();
         let n_clauses = header.next().unwrap().parse().unwrap();
 
         let mut task = Task::empty(n_variables, n_clauses);
         for line in input_lines {
+            if line.trim().starts_with("%") { break }
             task.clauses.push(
                 Clause::from_literal_iter(
                     line.rsplit_once('0')
@@ -54,7 +59,8 @@ mod tests {
             "p cnf 5 3
             1 -5 4 0
             -1 5 3 4 0
-            -3 -4 0"
+            -3 -4 0
+            %6 10 -11"
         );
         let expected = [
             HashSet::from_iter([1, -5, 4]),
