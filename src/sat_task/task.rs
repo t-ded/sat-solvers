@@ -6,6 +6,12 @@ pub struct Clause {
     pub n_literals: usize,
 }
 
+impl Clone for Clause {
+    fn clone(&self) -> Self {
+        Clause::from_set(self.literals.clone())
+    }
+}
+
 impl Clause {
     pub fn empty() -> Clause {
         Clause { literals: HashSet::new(), n_literals: 0 }
@@ -69,6 +75,17 @@ pub struct Task {
     pub n_clauses: usize,
     pub clauses: Vec<Clause>,
     pub assignment: HashMap<usize, Option<bool>>,
+}
+
+impl Clone for Task {
+    fn clone(&self) -> Task {
+        let mut task_copy = Task::empty(self.n_variables, self.n_clauses);
+        task_copy.assignment = self.assignment.clone();
+        for clause in self.clauses.iter() {
+            task_copy.clauses.push(clause.clone());
+        }
+        task_copy
+    }
 }
 
 impl Task {

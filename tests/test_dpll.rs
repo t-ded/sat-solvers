@@ -19,7 +19,7 @@ fn test_sat_problems() {
         if path.is_file() {
             let mut solver = DPLLSolver::new();
             let mut task = parser.parse_file(path).expect("Failed to parse");
-            let result = solver.solve(&mut task, 1);
+            let result = solver.solve(task.clone(), 1);
             match result {
                 TaskResult::SAT(sat) => {
                     task.assignment = sat.into_iter().map(|(k, v)| (k, Some(v))).collect();
@@ -46,7 +46,7 @@ fn test_unsat_problems() {
         if path.is_file() {
             let mut solver = DPLLSolver::new();
             let mut task = parser.parse_file(path).expect("Failed to parse");
-            let result = solver.solve(&mut task, 1);
+            let result = solver.solve(task.clone(), 1);
             match result {
                 TaskResult::UNSAT("TODO") => { assert!(true) },
                 _ => assert!(false),
